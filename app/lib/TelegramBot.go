@@ -7,7 +7,7 @@ import (
 	conf "app.go/app/config"
 	lg "app.go/app/lib/logger"
 	"golang.org/x/exp/rand"
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 func CreateBot(chat_id int, fact, question string, answersYes, answersNo []string, log *lg.Logger, config *conf.Config) *tb.Bot {
@@ -17,15 +17,24 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 	bot, err := tb.NewBot(tb.Settings{
 		Token: bot_token,
 		// Time for bot reading messages
-		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
+		Poller: &tb.LongPoller{
+			Timeout:        10 * time.Second,
+			AllowedUpdates: []string{"message", "edited_message", "channel_post", "edited_channel_post"}},
 	})
 	if err != nil {
 		log.Fatal(err, "Ошибка создания бота:")
 	}
 
+	startReadingTime := time.Now()
+
 	// Add command's handlers for debug
-	bot.Handle("/sendpoll", func(m *tb.Message) {
-		SendPoll(bot, chat_id, fact, question, answersYes, answersNo, log)
+	bot.Handle("/sendpoll", func(c tb.Context) error {
+		// Check all message in queue, their time and if it is more than now then run logic!
+		if c.Message().Time().After(startReadingTime) {
+			SendPoll(bot, chat_id, fact, question, answersYes, answersNo, log)
+		}
+
+		return nil
 	})
 
 	log.Info(fmt.Sprintf("Бот '%s' создан успешно", bot.Me.Username))

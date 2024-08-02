@@ -19,8 +19,8 @@ func main() {
 
 	// Create bot
 	bot := lib.CreateBot(config.Bot_secure.Chat_id, fact, config.Poll.Question, config.Poll.AnswersYes, config.Poll.AnswersNo, log, &config)
+	log.Info("Бот запущен")
 
 	// Start bot in infinite loop
 	bot.Start()
-	log.Info("Бот запущен")
 }
