@@ -1,0 +1,12 @@
+url: "https://randstuff.ru/fact/fav/"
+path_to_pics: ""
+poll:
+  question: "Завтра собираемся?"
+  answersYes: [Да, Yes, Y, +]
+  answersNo: [Нет, No, N, -]
+bot_secure:
+  # bot_token in base64
+  bot_token: "NjkwOTU5MjgyMTpBQUVpbnZXSGpJd3BrbWp4TkNvN0VDNDJWOEw5U252a3A4VQ=="
+  # hash256 of bot_token
+  bot_hash: "fb1b1c740f0003ab13c788b9bbe14ae556c6910d7a8873f6a745fadd2cb357bf"
+  chat_id: -1002240809272
