@@ -3,21 +3,24 @@ package main
 import (
 	"app.go/app/config"
 	"app.go/app/lib"
+	"app.go/app/lib/logger"
 )
 
 func main() {
-	// Get config
-	config := config.LoadConfig()
+	//Get logger
+	log := logger.NewLogger(nil)
+	log.Info("Запуск бота")
 
-	// Get bot_token
-	bot_token := lib.GetDecryptBotToken(config.Bot_secure.Bot_token, config.Bot_secure.Bot_hash)
+	// Get config
+	config := config.LoadConfig(log)
 
 	// Get website data
-	fact := lib.GetDataFromWebsite(config.Url)
+	fact := lib.DataFromWebsite(config.Url, log)
 
 	// Create bot
-	bot := lib.CreateBot(bot_token, config.Bot_secure.Chat_id, fact, config.Poll.Question, config.Poll.AnswersYes, config.Poll.AnswersNo)
+	bot := lib.CreateBot(config.Bot_secure.Chat_id, fact, config.Poll.Question, config.Poll.AnswersYes, config.Poll.AnswersNo, log, &config)
 
 	// Start bot in infinite loop
 	bot.Start()
+	log.Info("Бот запущен")
 }

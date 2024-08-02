@@ -2,42 +2,46 @@ package lib
 
 import (
 	"fmt"
-	"log"
 	"time"
 
+	conf "app.go/app/config"
+	lg "app.go/app/lib/logger"
 	"golang.org/x/exp/rand"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func CreateBot(bot_token string, chat_id int, fact, question string, answersYes, answersNo []string) *tb.Bot {
+func CreateBot(chat_id int, fact, question string, answersYes, answersNo []string, log *lg.Logger, config *conf.Config) *tb.Bot {
+	// Get bot token
+	bot_token := DecryptBotToken(config.Bot_secure.Bot_token, config.Bot_secure.Bot_hash, log)
+
 	bot, err := tb.NewBot(tb.Settings{
 		Token: bot_token,
 		// Time for bot reading messages
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
 	if err != nil {
-		log.Fatalf("Ошибка создания бота:\n%v", err)
+		log.Fatal(err, "Ошибка создания бота:")
 	}
 
 	// Add command's handlers for debug
 	bot.Handle("/sendpoll", func(m *tb.Message) {
-		SendPoll(bot, chat_id, fact, question, answersYes, answersNo)
+		SendPoll(bot, chat_id, fact, question, answersYes, answersNo, log)
 	})
 
-	log.Printf("Бот '%s' запущен", bot.Me.Username)
+	log.Info(fmt.Sprintf("Бот '%s' создан успешно", bot.Me.Username))
 
 	return bot
 }
 
-func SendPoll(bot *tb.Bot, chat_id int, fact, question string, answersYes, answersNo []string) {
+func SendPoll(bot *tb.Bot, chat_id int, fact, question string, answersYes, answersNo []string, log *lg.Logger) {
 	if question == "" {
-		log.Fatal("Отсутствует вопрос. Заполните его в конфигурационном файле")
+		log.Fatal(fmt.Errorf("отсутствует вопрос. Заполните его в конфигурационном файле"), "")
 	}
 	result_message := fmt.Sprintf("%s\n%s", fact, question)
 
 	// Get answers
 	if len(answersYes) == 0 || len(answersNo) == 0 {
-		log.Fatal("Отсутствуют варианты ответов. Заполните их в конфигурационном файле")
+		log.Fatal(fmt.Errorf("отсутствуют варианты ответов. Заполните их в конфигурационном файле"), "")
 	}
 	rnd_num := rand.Intn(len(answersYes))
 	answers := []string{answersYes[rnd_num], answersNo[rnd_num]}
@@ -60,11 +64,11 @@ func SendPoll(bot *tb.Bot, chat_id int, fact, question string, answersYes, answe
 		},
 	)
 	if err != nil {
-		log.Fatalf("Ошибка отправки опроса:\n%v", err)
+		log.Fatal(err, "Ошибка отправки опроса:\n%v")
 		// return nil
 	}
 
-	log.Printf("Опрос успешно отправлен:\n%v", poll_message)
+	log.Info(fmt.Sprintf("Опрос успешно отправлен:\n%v", poll_message))
 
 	// return poll_message
 }

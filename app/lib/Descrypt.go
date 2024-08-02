@@ -4,8 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 
-	"log"
+	lg "app.go/app/lib/logger"
 )
 
 func encrypt(bot_token string) string {
@@ -16,24 +17,24 @@ func encrypt(bot_token string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func decrypt(hash string) string {
+func decrypt(hash string, log *lg.Logger) string {
 	// Convert base64 string to bytes
 	bytes, err := base64.StdEncoding.DecodeString(hash)
 	if err != nil {
-		log.Fatalf("Ошибка декодирования пароля:\n%v", err)
+		log.Fatal(err, "Ошибка декодирования пароля:")
 		return ""
 	}
 	return string(bytes)
 }
 
-func GetDecryptBotToken(bot_token, bot_hash string) string {
+func DecryptBotToken(bot_token, bot_hash string, log *lg.Logger) string {
 	hash_config := encrypt(bot_token)
 
 	if hash_config == bot_hash {
-		log.Printf("Пароль совпал: %s", hash_config)
-		return decrypt(bot_token)
+		log.Info(fmt.Sprintf("Пароль совпал: %s", hash_config))
+		return decrypt(bot_token, log)
 	} else {
-		log.Fatal("Неверное совпадение пароля")
+		log.Fatal(fmt.Errorf("неверное совпадение пароля"), "")
 		return ""
 	}
 }

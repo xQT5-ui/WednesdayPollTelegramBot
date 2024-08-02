@@ -1,32 +1,34 @@
 package lib
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"regexp"
 
 	"github.com/PuerkitoBio/goquery"
+
+	lg "app.go/app/lib/logger"
 )
 
-func GetDataFromWebsite(url string) string {
+func DataFromWebsite(url string, log *lg.Logger) string {
 	// Get website data
 	res, err := http.Get(url)
 	if err != nil {
-		log.Fatalf("Ошибка получения информации:\n%v", err)
+		log.Fatal(err, "Ошибка подключения к сайту:")
 		return ""
 	}
 
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		log.Fatalf("Ошибка доступности информации: %d %s", res.StatusCode, res.Status)
+		log.Fatal(fmt.Errorf("ошибка доступности информации: %d %s", res.StatusCode, res.Status), "")
 		return ""
 	}
 
 	// Read website data
 	body, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		log.Fatalf("Ошибка чтения информации с сайта:\n%v", err)
+		log.Fatal(err, "Ошибка чтения информации с сайта:")
 		return ""
 	}
 
@@ -38,7 +40,7 @@ func GetDataFromWebsite(url string) string {
 		fact = re.ReplaceAllString(fact, ".")
 	}
 
-	log.Printf("Информация с сайта '%s' успешно получена:\n%s", url, fact)
+	log.Info(fmt.Sprintf("Информация с сайта '%s' успешно получена:\n%s", url, fact))
 
 	return fact
 }
