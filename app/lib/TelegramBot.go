@@ -30,23 +30,14 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 	}
 
 	startReadingTime := time.Now()
-	var msg *tb.Message
 
 	// Add command's handlers for debug
 	bot.Handle("/sendpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
-			msg = sendPoll(bot, c.Chat(), fact, question, answersYes, answersNo, log)
+			sendPoll(bot, c.Chat(), fact, question, answersYes, answersNo, log)
 			// Save poll msg ID
 			// c.Set("poll_msg_id", msg.ID)
-		}
-		return nil
-	})
-
-	bot.Handle("/pinpoll", func(c tb.Context) error {
-		// Check all message in queue, their time and if it is more than now then run logic!
-		if c.Message().Time().After(startReadingTime) {
-			pinMsg(bot, c.Chat(), log, msg)
 		}
 		return nil
 	})
@@ -64,7 +55,7 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 	return bot
 }
 
-func sendPoll(bot *tb.Bot, chat *tb.Chat, fact, question string, answersYes, answersNo []string, log *lg.Logger) *tb.Message {
+func sendPoll(bot *tb.Bot, chat *tb.Chat, fact, question string, answersYes, answersNo []string, log *lg.Logger) {
 	if question == "" {
 		log.Fatal(fmt.Errorf("отсутствует вопрос. Заполните его в конфигурационном файле"), "")
 	}
@@ -102,12 +93,15 @@ func sendPoll(bot *tb.Bot, chat *tb.Chat, fact, question string, answersYes, ans
 	)
 	if err != nil {
 		log.Fatal(err, "Ошибка отправки опроса:")
-		return nil
+		// return nil
 	}
 
-	log.Info(fmt.Sprintf("Опрос успешно отправлен:\n%v", poll_message.ID))
+	log.Info(fmt.Sprintf("Опрос успешно отправлен c ID = %v", poll_message.ID))
 
-	return poll_message
+	// Pin created poll message
+	pinMsg(bot, chat, log, poll_message)
+
+	// return poll_message
 }
 
 func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
@@ -121,15 +115,15 @@ func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
 	pinnedMessage := chat.PinnedMessage
 
 	if pinnedMessage != nil && pinnedMessage.Poll != nil && pinnedMessage.ID == new_poll.ID {
-		log.Info(fmt.Sprintf("Опрос уже закреплен с ID = '%v'", new_poll.ID))
+		log.Info(fmt.Sprintf("Опрос уже закреплен с ID = %v", new_poll.ID))
 		return
 	} else {
 		// Pin poll
-		err := bot.Pin(new_poll, tb.Silent)
+		err := bot.Pin(new_poll, tb.Protected)
 		if err != nil {
-			log.Fatal(err, fmt.Sprintf("Ошибка закрепления опроса с ID = '%v'", new_poll.ID))
+			log.Fatal(err, fmt.Sprintf("Ошибка закрепления опроса с ID = %v", new_poll.ID))
 		}
-		log.Info(fmt.Sprintf("Опрос закреплен ID = '%v'", new_poll.ID))
+		log.Info(fmt.Sprintf("Опрос закреплен с ID = %v", new_poll.ID))
 	}
 }
 
@@ -144,11 +138,42 @@ func unpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger) {
 	pinnedMessage := chat.PinnedMessage
 
 	if pinnedMessage != nil && pinnedMessage.Poll != nil {
+		// Close/stop poll
+		poll_msg, err := bot.StopPoll(pinnedMessage, tb.Silent)
+		if err != nil {
+			log.Fatal(err, "Ошибка закрытия опроса:")
+		}
+		log.Info(fmt.Sprintf("Опрос закрыт c ID = %v", pinnedMessage.ID))
+
 		// Unpin poll
-		err := bot.Unpin(chat, pinnedMessage.ID)
+		err = bot.Unpin(chat, pinnedMessage.ID)
 		if err != nil {
 			log.Fatal(err, "Ошибка открепления опроса:")
 		}
-		log.Info(fmt.Sprintf("Опрос откреплен c ID = '%v'", pinnedMessage.ID))
+		log.Info(fmt.Sprintf("Опрос откреплен c ID = %v", pinnedMessage.ID))
+
+		// Send result reply message
+		// Get poll's results
+		yesNum := poll_msg.Options[0].VoterCount
+		noNum := poll_msg.Options[1].VoterCount
+
+		// Check results and send result reply message
+		if yesNum > noNum {
+			log.Info(fmt.Sprintf("Положительных ответов: %d", yesNum))
+
+			_, err = bot.Send(chat, "Ква, по результатам опроса встреча чуваков актуальна!", &tb.SendOptions{ReplyTo: pinnedMessage})
+			if err != nil {
+				log.Fatal(err, "Ошибка отправки результирующего сообщения по опросу:")
+			}
+		} else if noNum > yesNum {
+			log.Info(fmt.Sprintf("Отрицательных ответов: %d", noNum))
+
+			_, err = bot.Send(chat, "Ква, по результатам опроса встреча чуваков НЕ актуальна...", &tb.SendOptions{ReplyTo: pinnedMessage})
+			if err != nil {
+				log.Fatal(err, "Ошибка отправки результирующего сообщения по опросу:")
+			}
+		} else {
+			log.Info("Нет очевидного результата")
+		}
 	}
 }
