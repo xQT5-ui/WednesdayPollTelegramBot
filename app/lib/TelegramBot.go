@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"math/rand"
+
 	conf "app.go/app/config"
 	lg "app.go/app/lib/logger"
-	"golang.org/x/exp/rand"
 	tb "gopkg.in/telebot.v3"
 )
 
@@ -66,8 +67,9 @@ func sendPoll(bot *tb.Bot, chat *tb.Chat, fact string, log *lg.Logger, config *c
 	if len(config.Poll.AnswersYes) == 0 || len(config.Poll.AnswersNo) == 0 {
 		log.Fatal(fmt.Errorf("отсутствуют варианты ответов. Заполните их в конфигурационном файле"), "")
 	}
-	rand.Seed(34)
-	rnd_num := rand.Intn(len(config.Poll.AnswersYes))
+	rnd_src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(rnd_src)
+	rnd_num := r.Intn(len(config.Poll.AnswersYes))
 	answers := []string{config.Poll.AnswersYes[rnd_num], config.Poll.AnswersNo[rnd_num]}
 	// Set answer's options for poll
 	poll_options := []tb.PollOption{
