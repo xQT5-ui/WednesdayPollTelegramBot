@@ -10,7 +10,7 @@ import (
 	tb "gopkg.in/telebot.v3"
 )
 
-func CreateBot(chat_id int, fact, question string, answersYes, answersNo []string, log *lg.Logger, config *conf.Config) *tb.Bot {
+func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
 	// Get bot token
 	bot_token := DecryptBotToken(config.Bot_secure.Bot_token, config.Bot_secure.Bot_hash, log)
 
@@ -19,7 +19,7 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 		Token: bot_token,
 		Poller: &tb.LongPoller{
 			// Time for bot reading messages
-			Timeout:        10 * time.Second,
+			Timeout:        time.Duration(config.Bot_secure.Upd_time) * time.Second,
 			AllowedUpdates: []string{"message", "edited_message", "channel_post", "edited_channel_post"}},
 	}
 
@@ -35,7 +35,7 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 	bot.Handle("/sendpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
-			sendPoll(bot, c.Chat(), fact, question, answersYes, answersNo, log)
+			sendPoll(bot, c.Chat(), fact, log, config)
 			// Save poll msg ID
 			// c.Set("poll_msg_id", msg.ID)
 		}
@@ -55,20 +55,20 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 	return bot
 }
 
-func sendPoll(bot *tb.Bot, chat *tb.Chat, fact, question string, answersYes, answersNo []string, log *lg.Logger) {
-	if question == "" {
+func sendPoll(bot *tb.Bot, chat *tb.Chat, fact string, log *lg.Logger, config *conf.Config) {
+	if config.Poll.Question == "" {
 		log.Fatal(fmt.Errorf("отсутствует вопрос. Заполните его в конфигурационном файле"), "")
 	}
 
-	result_message := fmt.Sprintf("%s\n%s", fact, question)
+	result_message := fmt.Sprintf("%s\n%s", fact, config.Poll.Question)
 
 	// Get answers
-	if len(answersYes) == 0 || len(answersNo) == 0 {
+	if len(config.Poll.AnswersYes) == 0 || len(config.Poll.AnswersNo) == 0 {
 		log.Fatal(fmt.Errorf("отсутствуют варианты ответов. Заполните их в конфигурационном файле"), "")
 	}
 	rand.Seed(34)
-	rnd_num := rand.Intn(len(answersYes))
-	answers := []string{answersYes[rnd_num], answersNo[rnd_num]}
+	rnd_num := rand.Intn(len(config.Poll.AnswersYes))
+	answers := []string{config.Poll.AnswersYes[rnd_num], config.Poll.AnswersNo[rnd_num]}
 	// Set answer's options for poll
 	poll_options := []tb.PollOption{
 		{Text: answers[0], VoterCount: 0},

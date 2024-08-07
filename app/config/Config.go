@@ -15,6 +15,7 @@ type Config struct {
 		Bot_token string `yaml:"bot_token"`
 		Bot_hash  string `yaml:"bot_hash"`
 		Chat_id   int    `yaml:"chat_id"`
+		Upd_time  int    `yaml:"upd_time"`
 	} `yaml:"bot_secure"`
 	Poll struct {
 		Question   string   `yaml:"question"`
