@@ -4,5 +4,6 @@
 # ignore build program
 /build/
 
-# ignore app/log - this file only for debugging
+# ignore app/... - this file only for debugging
 /app/log/
+/app/pics/

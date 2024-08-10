@@ -46,7 +46,7 @@ func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
 	bot.Handle("/unpinpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
-			unpinMsg(bot, c.Chat(), log)
+			unpinMsg(bot, c.Chat(), log, config)
 		}
 		return nil
 	})
@@ -88,7 +88,6 @@ func sendPoll(bot *tb.Bot, chat *tb.Chat, fact string, log *lg.Logger, config *c
 	// Send poll
 	poll_message, err := bot.Send(
 		// Send's what's chat
-		// &tb.Chat{ID: int64(chat_id)},
 		chat,
 		// Send's poll message
 		poll_msg,
@@ -102,6 +101,12 @@ func sendPoll(bot *tb.Bot, chat *tb.Chat, fact string, log *lg.Logger, config *c
 
 	// Pin created poll message
 	pinMsg(bot, chat, log, poll_message)
+
+	// Stop bot after command
+	if config.Bot_secure.Exit_after_exec {
+		log.Info("Бот остановлен")
+		bot.Stop()
+	}
 
 	// return poll_message
 }
@@ -129,7 +134,7 @@ func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
 	}
 }
 
-func unpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger) {
+func unpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config) {
 	chat, err := bot.ChatByID(c.ID)
 	if err != nil {
 		log.Fatal(err, "Ошибка получения чата:")
@@ -177,5 +182,11 @@ func unpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger) {
 		} else {
 			log.Info("Нет очевидного результата")
 		}
+	}
+
+	// Stop bot after command
+	if config.Bot_secure.Exit_after_exec {
+		log.Info("Бот остановлен")
+		bot.Stop()
 	}
 }
