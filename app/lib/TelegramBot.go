@@ -11,7 +11,12 @@ import (
 	tb "gopkg.in/telebot.v3"
 )
 
+var chatID int64
+
 func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
+	// Get chatID
+	chatID = int64(config.Bot_secure.Chat_id)
+
 	// Get bot token
 	bot_token := DecryptBotToken(config.Bot_secure.Bot_token, config.Bot_secure.Bot_hash, log)
 
@@ -30,10 +35,10 @@ func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
 		log.Fatal(err, "Ошибка создания бота:")
 	}
 
-	startReadingTime := time.Now()
+	//startReadingTime := time.Now()
 
 	// Add command's handlers for debug
-	bot.Handle("/sendpoll", func(c tb.Context) error {
+	/*bot.Handle("/sendpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
 			sendPoll(bot, c.Chat(), fact, log, config)
@@ -49,14 +54,14 @@ func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
 			unpinMsg(bot, c.Chat(), log, config)
 		}
 		return nil
-	})
+	})*/
 
 	log.Info(fmt.Sprintf("Бот '%s' создан успешно", bot.Me.Username))
 
 	return bot
 }
 
-func sendPoll(bot *tb.Bot, chat *tb.Chat, fact string, log *lg.Logger, config *conf.Config) {
+func SendPoll(bot *tb.Bot, chat *tb.Chat, fact string, log *lg.Logger, config *conf.Config) {
 	if config.Poll.Question == "" {
 		log.Fatal(fmt.Errorf("отсутствует вопрос. Заполните его в конфигурационном файле"), "")
 	}
@@ -107,8 +112,6 @@ func sendPoll(bot *tb.Bot, chat *tb.Chat, fact string, log *lg.Logger, config *c
 		log.Info("Бот остановлен")
 		bot.Stop()
 	}
-
-	// return poll_message
 }
 
 func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
@@ -134,7 +137,7 @@ func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
 	}
 }
 
-func unpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config) {
+func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config) {
 	chat, err := bot.ChatByID(c.ID)
 	if err != nil {
 		log.Fatal(err, "Ошибка получения чата:")
