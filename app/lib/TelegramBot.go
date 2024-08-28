@@ -4,13 +4,19 @@ import (
 	"fmt"
 	"time"
 
+	"math/rand"
+
 	conf "app.go/app/config"
 	lg "app.go/app/lib/logger"
-	"golang.org/x/exp/rand"
 	tb "gopkg.in/telebot.v3"
 )
 
-func CreateBot(chat_id int, fact, question string, answersYes, answersNo []string, log *lg.Logger, config *conf.Config) *tb.Bot {
+var chatID int64
+
+func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
+	// Get chatID
+	chatID = int64(config.Bot_secure.Chat_id)
+
 	// Get bot token
 	bot_token := DecryptBotToken(config.Bot_secure.Bot_token, config.Bot_secure.Bot_hash, log)
 
@@ -19,7 +25,7 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 		Token: bot_token,
 		Poller: &tb.LongPoller{
 			// Time for bot reading messages
-			Timeout:        10 * time.Second,
+			Timeout:        time.Duration(config.Bot_secure.Upd_time) * time.Second,
 			AllowedUpdates: []string{"message", "edited_message", "channel_post", "edited_channel_post"}},
 	}
 
@@ -29,13 +35,13 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 		log.Fatal(err, "Ошибка создания бота:")
 	}
 
-	startReadingTime := time.Now()
+	//startReadingTime := time.Now()
 
 	// Add command's handlers for debug
-	bot.Handle("/sendpoll", func(c tb.Context) error {
+	/*bot.Handle("/sendpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
-			sendPoll(bot, c.Chat(), fact, question, answersYes, answersNo, log)
+			sendPoll(bot, c.Chat(), fact, log, config)
 			// Save poll msg ID
 			// c.Set("poll_msg_id", msg.ID)
 		}
@@ -45,30 +51,31 @@ func CreateBot(chat_id int, fact, question string, answersYes, answersNo []strin
 	bot.Handle("/unpinpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
-			unpinMsg(bot, c.Chat(), log)
+			unpinMsg(bot, c.Chat(), log, config)
 		}
 		return nil
-	})
+	})*/
 
 	log.Info(fmt.Sprintf("Бот '%s' создан успешно", bot.Me.Username))
 
 	return bot
 }
 
-func sendPoll(bot *tb.Bot, chat *tb.Chat, fact, question string, answersYes, answersNo []string, log *lg.Logger) {
-	if question == "" {
+func SendPoll(bot *tb.Bot, chat *tb.Chat, fact string, log *lg.Logger, config *conf.Config) {
+	if config.Poll.Question == "" {
 		log.Fatal(fmt.Errorf("отсутствует вопрос. Заполните его в конфигурационном файле"), "")
 	}
 
-	result_message := fmt.Sprintf("%s\n%s", fact, question)
+	result_message := fmt.Sprintf("%s\n%s", fact, config.Poll.Question)
 
 	// Get answers
-	if len(answersYes) == 0 || len(answersNo) == 0 {
+	if len(config.Poll.AnswersYes) == 0 || len(config.Poll.AnswersNo) == 0 {
 		log.Fatal(fmt.Errorf("отсутствуют варианты ответов. Заполните их в конфигурационном файле"), "")
 	}
-	rand.Seed(34)
-	rnd_num := rand.Intn(len(answersYes))
-	answers := []string{answersYes[rnd_num], answersNo[rnd_num]}
+	rnd_src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(rnd_src)
+	rnd_num := r.Intn(len(config.Poll.AnswersYes))
+	answers := []string{config.Poll.AnswersYes[rnd_num], config.Poll.AnswersNo[rnd_num]}
 	// Set answer's options for poll
 	poll_options := []tb.PollOption{
 		{Text: answers[0], VoterCount: 0},
@@ -86,7 +93,6 @@ func sendPoll(bot *tb.Bot, chat *tb.Chat, fact, question string, answersYes, ans
 	// Send poll
 	poll_message, err := bot.Send(
 		// Send's what's chat
-		// &tb.Chat{ID: int64(chat_id)},
 		chat,
 		// Send's poll message
 		poll_msg,
@@ -101,7 +107,11 @@ func sendPoll(bot *tb.Bot, chat *tb.Chat, fact, question string, answersYes, ans
 	// Pin created poll message
 	pinMsg(bot, chat, log, poll_message)
 
-	// return poll_message
+	// Stop bot after command
+	if config.Bot_secure.Exit_after_exec {
+		log.Info("Бот остановлен")
+		bot.Stop()
+	}
 }
 
 func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
@@ -127,7 +137,7 @@ func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
 	}
 }
 
-func unpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger) {
+func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config) {
 	chat, err := bot.ChatByID(c.ID)
 	if err != nil {
 		log.Fatal(err, "Ошибка получения чата:")
@@ -175,5 +185,11 @@ func unpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger) {
 		} else {
 			log.Info("Нет очевидного результата")
 		}
+	}
+
+	// Stop bot after command
+	if config.Bot_secure.Exit_after_exec {
+		log.Info("Бот остановлен")
+		bot.Stop()
 	}
 }

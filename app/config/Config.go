@@ -12,9 +12,11 @@ import (
 
 type Config struct {
 	Bot_secure struct {
-		Bot_token string `yaml:"bot_token"`
-		Bot_hash  string `yaml:"bot_hash"`
-		Chat_id   int    `yaml:"chat_id"`
+		Bot_token       string `yaml:"bot_token"`
+		Bot_hash        string `yaml:"bot_hash"`
+		Chat_id         int    `yaml:"chat_id"`
+		Upd_time        int    `yaml:"upd_time"`
+		Exit_after_exec bool   `yaml:"exit_after_exec"`
 	} `yaml:"bot_secure"`
 	Poll struct {
 		Question   string   `yaml:"question"`

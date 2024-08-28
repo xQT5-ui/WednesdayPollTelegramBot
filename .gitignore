@@ -1,4 +1,9 @@
 # ignore config-file
 /app/config/config.yaml
+
 # ignore build program
 /build/
+
+# ignore app/... - this file only for debugging
+/app/log/
+/app/pics/
