@@ -39,13 +39,6 @@ func main() {
 	wednesdayJob := sheduler.WednesdayJob(bot, fact, log, &config)
 	thursdayJob := sheduler.ThursdayJob(bot, fact, log, &config)
 
-	// FOR TEST: Wait for system signal
-	/*go func() {
-		time.Sleep(5 * time.Second)
-		log.Info("Прошло 10 секунд. Отправка сигнала остановки программы...")
-		c_sys <- os.Interrupt
-	}()*/
-
 	go func() {
 		// Waiting signal from channel (from signal.Notify)
 		<-c_sys
