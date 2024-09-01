@@ -4,7 +4,7 @@ This is a project for automatization working with a poll in telegram's chat. Thi
 
 1. Get random fact from `url`
 2. Concatenate it with `question`
-3. Send poll's message in chat (with `chat_id`) and pin it
+3. Send poll message in chat (with `chat_id`) and pin it
 4. Close and unpin the poll, summarize result and send result message in chat
 
 ## SETTINGS AND INSTALLS
@@ -32,6 +32,7 @@ bot_secure:
   chat_id: -123456789
   # upd time for reading new message in seconds
   upd_time: 10
+  # stop bot after first action
   exit_after_exec: true
 ```
 
