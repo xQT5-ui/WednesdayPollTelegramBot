@@ -36,10 +36,18 @@ build_project() {
 
 # Функция для настройки автозапуска после загрузки рабочего стола
 setup_desktop_autostart() {
+    # проверка наличия исполняемого файла
+    if [ ! -f "$BUILD_DIR/$PROJECT_NAME" ]; then
+        echo "Ошибка: исполняемый файл не найден."
+        exit 1
+    fi
+
+    # создание директории автозапуска, если она не существует
     if [ ! -d "$AUTOSTART_DIR" ]; then
         mkdir -p "$AUTOSTART_DIR"
     fi
 
+    # настройка автозапуска
     if [ ! -f "$DESKTOP_FILE" ]; then
         echo "Настройка автозапуска после загрузки рабочего стола..."
         cat << EOF > "$DESKTOP_FILE"
@@ -50,6 +58,8 @@ Hidden=false
 NoDisplay=false
 Name=$PROJECT_NAME
 Comment=Автозапуск $PROJECT_NAME по средам и четвергам
+Icon=$PROJECT_DIR/app/logo.png
+X-GNOME-Autostart-enabled=true
 EOF
         echo "Автозапуск настроен."
     else
