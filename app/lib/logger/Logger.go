@@ -34,6 +34,16 @@ func NewLogger(l *log.Logger) *Logger {
 	// Get executable dir
 	execDir := filepath.Dir(execPath)
 
+	// Check exist log dir
+	_, err = os.Stat(filepath.Join(execDir, "log"))
+	if os.IsNotExist(err) {
+		err = os.Mkdir(filepath.Join(execDir, "log"), 0755)
+		if err != nil {
+			log.Fatal(err, fmt.Sprintf("Не получилось создать директорию логов '%s':", filepath.Join(execDir, "log")))
+			return nil
+		}
+	}
+
 	// Set config path
 	filename := filepath.Join(execDir, "log", "WednesdayPollTgBot.log")
 

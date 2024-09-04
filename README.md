@@ -7,6 +7,13 @@ This is a project for automatization working with a poll in telegram's chat. Thi
 3. Send poll message in chat (with `chat_id`) and pin it
 4. Close and unpin the poll, summarize result and send result message in chat
 
+## LIBRARY
+
+I use next libs for project:
+
+1. Sheduler: `github.com/carlescere/scheduler`
+2. TelegramBot: `gopkg.in/telebot.v3`
+
 ## SETTINGS AND INSTALLS
 
 Before to build a programm you need:
