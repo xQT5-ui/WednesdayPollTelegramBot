@@ -1,4 +1,4 @@
-package lib
+package tgbot
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"math/rand"
 
 	conf "app.go/app/config"
+	lib "app.go/app/lib"
 	lg "app.go/app/lib/logger"
 	tb "gopkg.in/telebot.v3"
 )
@@ -29,12 +30,12 @@ func checkExistingChat(bot *tb.Bot, c *tb.Chat, log *lg.Logger) *tb.Chat {
 	return chat
 }
 
-func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
+func CreateBot(fact string, log *lg.Logger, config *conf.Config, pinmsg_log *PinMsgFile) *tb.Bot {
 	// Get chatID
 	// chatID := int64(config.Bot_secure.Chat_id)
 
 	// Get bot token
-	bot_token := DecryptBotToken(config.Bot_secure.Bot_token, config.Bot_secure.Bot_hash, log)
+	bot_token := lib.DecryptBotToken(config.Bot_secure.Bot_token, config.Bot_secure.Bot_hash, log)
 
 	// Set preferences for bot
 	pref := tb.Settings{
@@ -51,13 +52,12 @@ func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
 		log.Fatal(err, "Ошибка создания бота:")
 	}
 
-	//startReadingTime := time.Now()
-
 	// Add command's handlers for debug
-	/*bot.Handle("/sendpoll", func(c tb.Context) error {
+	startReadingTime := time.Now()
+	bot.Handle("/sendpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
-			sendPoll(bot, c.Chat(), fact, log, config)
+			SendPoll(bot, c.Chat(), fact, log, config, pinmsg_log)
 			// Save poll msg ID
 			// c.Set("poll_msg_id", msg.ID)
 		}
@@ -67,17 +67,17 @@ func CreateBot(fact string, log *lg.Logger, config *conf.Config) *tb.Bot {
 	bot.Handle("/unpinpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
-			unpinMsg(bot, c.Chat(), log, config)
+			UnpinMsg(bot, c.Chat(), log, config, pinmsg_log)
 		}
 		return nil
-	})*/
+	})
 
 	log.Info(fmt.Sprintf("Бот '%s' создан успешно", bot.Me.Username))
 
 	return bot
 }
 
-func SendPoll(bot *tb.Bot, c *tb.Chat, fact string, log *lg.Logger, config *conf.Config) {
+func SendPoll(bot *tb.Bot, c *tb.Chat, fact string, log *lg.Logger, config *conf.Config, pinmsg_log *PinMsgFile) {
 	// Check config Question
 	if config.Poll.Question == "" {
 		log.Fatal(fmt.Errorf("отсутствует вопрос. Заполните его в конфигурационном файле"), "")
@@ -127,6 +127,9 @@ func SendPoll(bot *tb.Bot, c *tb.Chat, fact string, log *lg.Logger, config *conf
 	// Pin created poll message
 	pinMsg(bot, chat, log, poll_message)
 
+	// Save poll msg ID
+	pinmsg_log.Write(poll_message.ID, log)
+
 	// Stop bot after command
 	stopBotAfterExec(bot, log, config)
 }
@@ -135,7 +138,7 @@ func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
 	// Check existing chat
 	chat := checkExistingChat(bot, c, log)
 
-	// Get pin messages
+	// Get pin message
 	pinnedMessage := chat.PinnedMessage
 
 	// Check if created poll already pinned
@@ -154,14 +157,22 @@ func pinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, new_poll *tb.Message) {
 	}
 }
 
-func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config) {
+func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config, pinmsg_log *PinMsgFile) {
 	// Check existing chat
 	chat := checkExistingChat(bot, c, log)
 
 	// Get pin messages
 	pinnedMessage := chat.PinnedMessage
+	// Get last poll msg ID
+	logPinnedMessageID := pinmsg_log.GetLastPollMsgID()
+	// pinnedMessage := &tb.Message{ID: logPinnedMessageID, Chat: chat}
+	// Find message by ID
 
-	if pinnedMessage != nil && pinnedMessage.Poll != nil {
+	log.Info(fmt.Sprintf("Найдено сообщение: %s", pinnedMessage.Poll.Question))
+
+	// Check if created poll already pinned
+
+	if pinnedMessage.Poll != nil && pinnedMessage.ID == logPinnedMessageID {
 		// Close/stop poll
 		poll_msg, err := bot.StopPoll(pinnedMessage, tb.Silent)
 		if err != nil {
@@ -216,6 +227,8 @@ func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config) {
 
 			log.Info(fmt.Sprintf("Результирующее сообщение отправлено: %s", result_msg))
 		}
+	} else {
+		log.Info("Опрос ранее не был закреплен")
 	}
 
 	// Stop bot after command

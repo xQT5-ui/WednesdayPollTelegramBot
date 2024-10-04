@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
+
+	"app.go/app/lib/emptyfile"
 )
 
 type Logger struct {
@@ -22,45 +23,7 @@ func NewLogger(l *log.Logger) *Logger {
 		l = log.Default()
 	}
 
-	// Get executable path
-	var file *os.File
-
-	execPath, err := os.Executable()
-	if err != nil {
-		log.Fatal(err, "Ошибка получения пути исполняемого файла:")
-		return nil
-	}
-
-	// Get executable dir
-	execDir := filepath.Dir(execPath)
-
-	// Check exist log dir
-	_, err = os.Stat(filepath.Join(execDir, "log"))
-	if os.IsNotExist(err) {
-		err = os.Mkdir(filepath.Join(execDir, "log"), 0755)
-		if err != nil {
-			log.Fatal(err, fmt.Sprintf("Не получилось создать директорию логов '%s':", filepath.Join(execDir, "log")))
-			return nil
-		}
-	}
-
-	// Set config path
-	filename := filepath.Join(execDir, "log", "WednesdayPollTgBot.log")
-
-	// Create file
-	// Delete previous file if it exists
-	if _, err := os.Stat(filename); !os.IsNotExist(err) {
-		err = os.Remove(filename)
-		if err != nil {
-			log.Fatal(err, fmt.Sprintf("Не получилось удалить файл лога '%s':", filename))
-			return nil
-		}
-	}
-	file, err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal(err, fmt.Sprintf("Не получилось создать файл лога '%s':", filename))
-		return nil
-	}
+	file := emptyfile.ReCreateFile("log", "WednesdayPollTgBot.log")
 
 	return &Logger{
 		Log:  l,
@@ -78,7 +41,7 @@ func (l *Logger) Info(message string) {
 	fmt_time := time.Now().Format("2006-01-02 15:04:05")
 	log_msg := fmt.Sprintf("[%v] INFO: %s", fmt_time, message)
 
-	l.Log.Printf(log_msg)
+	l.Log.Println(log_msg)
 
 	// Set message into file
 	_, err := l.writer.WriteString(log_msg + "\n")
