@@ -231,6 +231,8 @@ func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config, pinm
 		log.Info("Опрос ранее не был закреплен")
 	}
 
+	pinmsg_log.ClearFile()
+
 	// Stop bot after command
 	stopBotAfterExec(bot, log, config)
 }
