@@ -53,7 +53,7 @@ func CreateBot(fact string, log *lg.Logger, config *conf.Config, pinmsg_log *Pin
 	}
 
 	// Add command's handlers for debug
-	startReadingTime := time.Now()
+	/*startReadingTime := time.Now()
 	bot.Handle("/sendpoll", func(c tb.Context) error {
 		// Check all message in queue, their time and if it is more than now then run logic!
 		if c.Message().Time().After(startReadingTime) {
@@ -70,7 +70,7 @@ func CreateBot(fact string, log *lg.Logger, config *conf.Config, pinmsg_log *Pin
 			UnpinMsg(bot, c.Chat(), log, config, pinmsg_log)
 		}
 		return nil
-	})
+	})*/
 
 	log.Info(fmt.Sprintf("Бот '%s' создан успешно", bot.Me.Username))
 

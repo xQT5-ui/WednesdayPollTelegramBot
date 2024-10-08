@@ -8,6 +8,7 @@ import (
 	"app.go/app/config"
 	"app.go/app/lib"
 	"app.go/app/lib/logger"
+	"app.go/app/lib/sheduler"
 	"app.go/app/lib/tgbot"
 )
 
@@ -40,7 +41,7 @@ func main() {
 	bot := tgbot.CreateBot(fact, log, &config, pinmsg_log)
 
 	// Create sheduler and jobs
-	/*sheduler := sheduler.NewScheduler()
+	sheduler := sheduler.NewScheduler()
 	log.Info("Планировщик создан")
 	wednesdayJob := sheduler.WednesdayJob(bot, fact, log, &config, pinmsg_log)
 	thursdayJob := sheduler.ThursdayJob(bot, fact, log, &config, pinmsg_log)
@@ -61,7 +62,7 @@ func main() {
 		bot.Stop()
 		// Exit program
 		os.Exit(0)
-	}()*/
+	}()
 
 	// Start bot in infinite loop
 	log.Info("Бот запущен")
