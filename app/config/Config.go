@@ -19,9 +19,11 @@ type Config struct {
 		Exit_after_exec bool   `yaml:"exit_after_exec"`
 	} `yaml:"bot_secure"`
 	Poll struct {
-		Question   string   `yaml:"question"`
-		AnswersYes []string `yaml:"answersYes"`
-		AnswersNo  []string `yaml:"answersNo"`
+		Question        string   `yaml:"question"`
+		AnswersYes      []string `yaml:"answersYes"`
+		AnswersNo       []string `yaml:"answersNo"`
+		Poll_start_time string   `yaml:"poll_start_time"`
+		Poll_end_time   string   `yaml:"poll_end_time"`
 	} `yaml:"poll"`
 	Url          string `yaml:"url"`
 	Path_to_pics string `yaml:"path_to_pics"`

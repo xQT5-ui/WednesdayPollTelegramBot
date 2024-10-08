@@ -9,13 +9,20 @@ import (
 	"app.go/app/lib"
 	"app.go/app/lib/logger"
 	"app.go/app/lib/sheduler"
+	"app.go/app/lib/tgbot"
 )
 
 func main() {
 	//Get logger
 	log := logger.NewLogger(nil)
-	// Close open file
+	// Close open file after end of program
 	defer log.Close()
+
+	// Get pinmsg log file
+	pinmsg_log := tgbot.NewPinMsgFile(log)
+	// Close open file after end of program
+	defer pinmsg_log.Close()
+
 	log.Info("Запуск бота")
 
 	// Create gorutine for logger
@@ -31,13 +38,13 @@ func main() {
 	// fact := "В состав архипелага Филиппины входит 7107 островов."
 
 	// Create bot
-	bot := lib.CreateBot(fact, log, &config)
+	bot := tgbot.CreateBot(fact, log, &config, pinmsg_log)
 
 	// Create sheduler and jobs
 	sheduler := sheduler.NewScheduler()
 	log.Info("Планировщик создан")
-	wednesdayJob := sheduler.WednesdayJob(bot, fact, log, &config)
-	thursdayJob := sheduler.ThursdayJob(bot, fact, log, &config)
+	wednesdayJob := sheduler.WednesdayJob(bot, fact, log, &config, pinmsg_log)
+	thursdayJob := sheduler.ThursdayJob(bot, fact, log, &config, pinmsg_log)
 
 	go func() {
 		// Waiting signal from channel (from signal.Notify)
@@ -48,6 +55,8 @@ func main() {
 		log.Info("Задачи остановлены")
 		// Close log file
 		log.Close()
+		// Close pinmsg log file
+		pinmsg_log.Close()
 		// Stop bot
 		log.Info("Бот остановлен")
 		bot.Stop()
