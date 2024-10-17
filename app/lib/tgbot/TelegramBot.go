@@ -199,7 +199,7 @@ func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config, pinm
 		if yesNum > noNum && yesNum > 2 {
 			log.Info(fmt.Sprintf("Положительных ответов: %d", yesNum))
 
-			result_msg = "Ква, по результатам опроса встреча чуваков актуальна!"
+			result_msg = "Ква, по результатам опроса встреча чуваков актуа-а-альна!"
 			_, err = bot.Send(chat, result_msg, &tb.SendOptions{ReplyTo: pinnedMessage})
 			if err != nil {
 				log.Fatal(err, "Ошибка отправки результирующего сообщения по опросу:")
@@ -209,7 +209,7 @@ func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config, pinm
 		} else if noNum > yesNum {
 			log.Info(fmt.Sprintf("Отрицательных ответов: %d", noNum))
 
-			result_msg = "Ква, по результатам опроса встреча чуваков НЕ актуальна..."
+			result_msg = "Ква, по результатам опроса встреча чуваков НЕ актуа-а-альна..."
 			_, err = bot.Send(chat, result_msg, &tb.SendOptions{ReplyTo: pinnedMessage})
 			if err != nil {
 				log.Fatal(err, "Ошибка отправки результирующего сообщения по опросу:")
