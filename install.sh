@@ -53,7 +53,7 @@ setup_desktop_autostart() {
         cat << EOF > "$DESKTOP_FILE"
 [Desktop Entry]
 Type=Application
-Exec=/bin/bash -c 'if [[ $(date +%u) -eq 3 ]] || [[ $(date +%u) -eq 4 ]]; then $BUILD_DIR/$PROJECT_NAME; fi'
+Exec=$BUILD_DIR/$PROJECT_NAME
 Hidden=false
 NoDisplay=false
 Name=$PROJECT_NAME

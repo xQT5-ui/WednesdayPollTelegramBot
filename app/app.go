@@ -18,13 +18,6 @@ func main() {
 	// Close open file after end of program
 	defer log.Close()
 
-	// Get pinmsg log file
-	pinmsg_log := tgbot.NewPinMsgFile(log)
-	// Close open file after end of program
-	defer pinmsg_log.Close()
-
-	log.Info("Запуск бота")
-
 	// Create gorutine for logger
 	c_sys := make(chan os.Signal, 1)
 	// Set system signal to channel
@@ -33,9 +26,24 @@ func main() {
 	// Get config
 	config := config.LoadConfig(log)
 
+	// Get day of week
+	dayOfWeek := lib.DayOfWeek()
+
+	if config.Bot_secure.Work_day_flg && dayOfWeek != config.Bot_secure.Work_day && dayOfWeek != (config.Bot_secure.Work_day+1) {
+		log.Info("День недели не рабочий")
+		log.Close()
+		return
+	}
+
+	// Get pinmsg log file
+	pinmsg_log := tgbot.NewPinMsgFile(log)
+	// Close open file after end of program
+	defer pinmsg_log.Close()
+
+	log.Info("Запуск бота")
+
 	// Get website data
 	fact := lib.DataFromWebsite(config.Url, log)
-	// fact := "В состав архипелага Филиппины входит 7107 островов."
 
 	// Create bot
 	bot := tgbot.CreateBot(fact, log, &config, pinmsg_log)
@@ -50,16 +58,24 @@ func main() {
 		// Waiting signal from channel (from signal.Notify)
 		<-c_sys
 		// Stop jobs
-		wednesdayJob.Quit <- true
-		thursdayJob.Quit <- true
+		if wednesdayJob != nil {
+			wednesdayJob.Quit <- true
+		}
+		if thursdayJob != nil {
+			thursdayJob.Quit <- true
+		}
 		log.Info("Задачи остановлены")
 		// Close log file
 		log.Close()
 		// Close pinmsg log file
-		pinmsg_log.Close()
+		if pinmsg_log != nil {
+			pinmsg_log.Close()
+		}
 		// Stop bot
 		log.Info("Бот остановлен")
-		bot.Stop()
+		if bot != nil {
+			bot.Stop()
+		}
 		// Exit program
 		os.Exit(0)
 	}()

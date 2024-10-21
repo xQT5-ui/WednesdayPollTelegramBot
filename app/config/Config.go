@@ -17,6 +17,8 @@ type Config struct {
 		Chat_id         int    `yaml:"chat_id"`
 		Upd_time        int    `yaml:"upd_time"`
 		Exit_after_exec bool   `yaml:"exit_after_exec"`
+		Work_day        int    `yaml:"work_day"`
+		Work_day_flg    bool   `yaml:"work_day_flg"`
 	} `yaml:"bot_secure"`
 	Poll struct {
 		Question        string   `yaml:"question"`

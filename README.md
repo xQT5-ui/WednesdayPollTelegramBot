@@ -30,10 +30,12 @@ poll:
   question: "Завтра собираемся?"
   answersYes: [Да, Yes, Y, YES! YES! YES!, Конечно да, ➕, 👍, 🤝, 🫶, 🌞, 🗿, ✅, 🔋, 🩷, 🫰, 🆗, 💯]
   answersNo: [Нет, No, N, NO! NO! NO!, Конечно нет, ➖, 👎, ✋, 😐, 🌚, 🚧, ⛔️, 🪫, 💔, 🖕, 🛑, 🚫]
+  poll_start_time: "08:35"
+  poll_end_time: "08:50"
 # bot data
 bot_secure:
   # bot_token in base64
-  bot_token: "MTIzNDVxd2VydHk=" #12345qwerty for example
+  bot_token: "MTIzNDVxd2VydHk=" # 12345qwerty for example
   # hash256 of bot_token
   bot_hash: "b554b3ad18c9605a700f350f2e3708af9ca03857afbefde4a429ec0d6b1a9965"
   chat_id: -123456789
@@ -41,6 +43,13 @@ bot_secure:
   upd_time: 10
   # stop bot after first action
   exit_after_exec: true
+  # work days
+  # - 0 = sunday
+  # - 3 = wednesday
+  # - 5 = friday
+  work_day: 3
+  # works days flg
+  work_day_flg: true
 ```
 
 3. Run **install.sh** in current programm folder:
