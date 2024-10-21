@@ -34,7 +34,9 @@ func DataFromWebsite(url string, log *lg.Logger) string {
 
 	fact := body.Find("div#fact").Text()
 	if fact != "" {
-		pattern := `\.[\w|а-яА-Я]+|ПресноИнтересно`
+		log.Info("RAW-data с сайта: " + fact)
+
+		pattern := `\.[\w|а-яА-Я]+нтересно`
 
 		re := regexp.MustCompile(pattern)
 		fact = re.ReplaceAllString(fact, ".")

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	conf "app.go/app/config"
+	"app.go/app/lib"
 	lg "app.go/app/lib/logger"
 	tgbot "app.go/app/lib/tgbot"
 
@@ -23,11 +24,12 @@ func (s *Sheduler) WednesdayJob(bot *tb.Bot, fact string, log *lg.Logger, config
 	curTime := getCurTime(config.Poll.Poll_start_time, "N", log)
 
 	wednesdayJob, err := scheduler.Every().Day().At(curTime).Run(func() {
-		// check day of week because sheduler.Every()DayOfWeek().Run() doesn't work
-		// if time.Now().Weekday() == time.Wednesday {
-		// 	lib.SendPoll(bot, &tb.Chat{ID: int64(config.Bot_secure.Chat_id)}, fact, log, config, pinmsg_log)
-		// }
-		tgbot.SendPoll(bot, &tb.Chat{ID: int64(config.Bot_secure.Chat_id)}, fact, log, config, pinmsg_log)
+		// check day of week because sheduler.Every().DayOfWeek().Run() doesn't work
+		dayOfWeek := lib.DayOfWeek()
+
+		if dayOfWeek == config.Bot_secure.Work_day {
+			tgbot.SendPoll(bot, &tb.Chat{ID: int64(config.Bot_secure.Chat_id)}, fact, log, config, pinmsg_log)
+		}
 	})
 	if err != nil {
 		log.Fatal(err, "Ошибка при планировании задачи на среду:")
@@ -42,11 +44,12 @@ func (s *Sheduler) ThursdayJob(bot *tb.Bot, fact string, log *lg.Logger, config 
 	curTime := getCurTime(config.Poll.Poll_end_time, "Y", log)
 
 	thursdayJob, err := scheduler.Every().Day().At(curTime).Run(func() {
-		// check day of week because sheduler.Every()DayOfWeek().Run() doesn't work
-		// if time.Now().Weekday() == time.Thursday {
-		// 	lib.UnpinMsg(bot, &tb.Chat{ID: int64(config.Bot_secure.Chat_id)}, log, config, pinmsg_log)
-		// }
-		tgbot.UnpinMsg(bot, &tb.Chat{ID: int64(config.Bot_secure.Chat_id)}, log, config, pinmsg_log)
+		// check day of week because sheduler.Every().DayOfWeek().Run() doesn't work
+		dayOfWeek := lib.DayOfWeek()
+
+		if dayOfWeek == (config.Bot_secure.Work_day + 1) {
+			tgbot.UnpinMsg(bot, &tb.Chat{ID: int64(config.Bot_secure.Chat_id)}, log, config, pinmsg_log)
+		}
 	})
 	if err != nil {
 		log.Fatal(err, "Ошибка при планировании задачи на четверг:")
