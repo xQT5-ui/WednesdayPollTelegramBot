@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// Get pinmsg log file
-	pinmsg_log := tgbot.NewPinMsgFile(log)
+	pinmsg_log := tgbot.NewPinMsgFile()
 	// Close open file after end of program
 	defer pinmsg_log.Close()
 

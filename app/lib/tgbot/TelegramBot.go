@@ -86,49 +86,59 @@ func SendPoll(bot *tb.Bot, c *tb.Chat, fact string, log *lg.Logger, config *conf
 	// Check existing chat
 	chat := checkExistingChat(bot, c, log)
 
-	result_message := fmt.Sprintf("%s\n%s", fact, config.Poll.Question)
+	// Get pin messages
+	pinnedMessage := chat.PinnedMessage
+	// Get last poll msg ID
+	logPinnedMessageID := pinmsg_log.GetLastPollMsgID(log)
 
-	// Get config answers
-	if len(config.Poll.AnswersYes) == 0 || len(config.Poll.AnswersNo) == 0 {
-		log.Fatal(fmt.Errorf("отсутствуют варианты ответов. Заполните их в конфигурационном файле"), "")
+	// Check if created poll already pinned
+	if pinnedMessage == nil || pinnedMessage.ID != logPinnedMessageID && (pinnedMessage.Poll != nil && pinnedMessage.Poll.Question != config.Poll.Question || pinnedMessage.Text != config.Poll.Question) {
+		result_message := fmt.Sprintf("%s\n%s", fact, config.Poll.Question)
+
+		// Get config answers
+		if len(config.Poll.AnswersYes) == 0 || len(config.Poll.AnswersNo) == 0 {
+			log.Fatal(fmt.Errorf("отсутствуют варианты ответов. Заполните их в конфигурационном файле"), "")
+		}
+		rnd_src := rand.NewSource(time.Now().UnixNano())
+		r := rand.New(rnd_src)
+		rnd_num := r.Intn(len(config.Poll.AnswersYes))
+		answers := []string{config.Poll.AnswersYes[rnd_num], config.Poll.AnswersNo[rnd_num]}
+		// Set answer options for poll
+		poll_options := []tb.PollOption{
+			{Text: answers[0], VoterCount: 0},
+			{Text: answers[1], VoterCount: 0},
+		}
+
+		// Create poll message
+		poll_msg := &tb.Poll{
+			Question:  result_message,
+			Options:   poll_options,
+			Type:      tb.PollRegular,
+			Anonymous: false,
+		}
+
+		// Send poll
+		poll_message, err := bot.Send(
+			// Send to what's chat
+			chat,
+			// Send message
+			poll_msg,
+		)
+		if err != nil {
+			log.Fatal(err, "Ошибка отправки опроса:")
+			return
+		}
+
+		log.Info(fmt.Sprintf("Опрос успешно отправлен c ID = %v", poll_message.ID))
+
+		// Pin created poll message
+		pinMsg(bot, chat, log, poll_message)
+
+		// Save poll msg ID
+		pinmsg_log.Write(poll_message.ID, log)
+	} else {
+		log.Info("Опрос уже существует и закреплён. Отправка опроса прервана.")
 	}
-	rnd_src := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(rnd_src)
-	rnd_num := r.Intn(len(config.Poll.AnswersYes))
-	answers := []string{config.Poll.AnswersYes[rnd_num], config.Poll.AnswersNo[rnd_num]}
-	// Set answer options for poll
-	poll_options := []tb.PollOption{
-		{Text: answers[0], VoterCount: 0},
-		{Text: answers[1], VoterCount: 0},
-	}
-
-	// Create poll message
-	poll_msg := &tb.Poll{
-		Question:  result_message,
-		Options:   poll_options,
-		Type:      tb.PollRegular,
-		Anonymous: false,
-	}
-
-	// Send poll
-	poll_message, err := bot.Send(
-		// Send to what's chat
-		chat,
-		// Send message
-		poll_msg,
-	)
-	if err != nil {
-		log.Fatal(err, "Ошибка отправки опроса:")
-		return
-	}
-
-	log.Info(fmt.Sprintf("Опрос успешно отправлен c ID = %v", poll_message.ID))
-
-	// Pin created poll message
-	pinMsg(bot, chat, log, poll_message)
-
-	// Save poll msg ID
-	pinmsg_log.Write(poll_message.ID, log)
 
 	// Stop bot after command
 	stopBotAfterExec(bot, log, config)
@@ -164,14 +174,11 @@ func UnpinMsg(bot *tb.Bot, c *tb.Chat, log *lg.Logger, config *conf.Config, pinm
 	// Get pin messages
 	pinnedMessage := chat.PinnedMessage
 	// Get last poll msg ID
-	logPinnedMessageID := pinmsg_log.GetLastPollMsgID()
-	// pinnedMessage := &tb.Message{ID: logPinnedMessageID, Chat: chat}
-	// Find message by ID
+	logPinnedMessageID := pinmsg_log.GetLastPollMsgID(log)
 
 	log.Info(fmt.Sprintf("Найдено сообщение: %s", pinnedMessage.Poll.Question))
 
 	// Check if created poll already pinned
-
 	if pinnedMessage.Poll != nil && pinnedMessage.ID == logPinnedMessageID {
 		// Close/stop poll
 		poll_msg, err := bot.StopPoll(pinnedMessage, tb.Silent)
