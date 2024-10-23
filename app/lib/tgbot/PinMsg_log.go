@@ -3,7 +3,6 @@ package tgbot
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -20,7 +19,7 @@ type PinMsgFile struct {
 	mu     sync.Mutex
 }
 
-func NewPinMsgFile(log *lg.Logger) *PinMsgFile {
+func NewPinMsgFile() *PinMsgFile {
 	file := emptyfile.ReCreateFile("log", "WednesdayPollPinMsg.txt")
 
 	return &PinMsgFile{
@@ -81,7 +80,7 @@ func (l *PinMsgFile) Close() {
 	}
 }
 
-func (l *PinMsgFile) GetLastPollMsgID() int {
+func (l *PinMsgFile) GetLastPollMsgID(log *lg.Logger) int {
 	// Lock for thread safety
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -94,31 +93,50 @@ func (l *PinMsgFile) GetLastPollMsgID() int {
 	}
 	defer file.Close()
 
-	// Read last line
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
+	var id int
 
-	var lastLine string
+	// Check file size: if it more that 0 then read last line
+	fileSize := getFileSize(l.File.Name(), log)
 
-	for scanner.Scan() {
-		lastLine = scanner.Text()
-	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err, "Не получилось прочитать файл лога закреплённого сообщения:")
-		return 0
-	}
+	if fileSize > 0 {
+		// Read last line
+		scanner := bufio.NewScanner(file)
+		scanner.Split(bufio.ScanLines)
 
-	// Parse last line throw regexp
-	re := regexp.MustCompile(`ID: (\d+)`)
-	matches := re.FindStringSubmatch(lastLine)
-	if len(matches) != 2 {
-		log.Fatal(fmt.Errorf("длина закреплённого ID закрепленного сообщения меньше 2 элементов: %s", lastLine), "Не удалось распарсить ID закрепленного сообщения:")
-	}
-	id, err := strconv.Atoi(matches[1])
-	if err != nil {
-		log.Fatal(err, "Не удалось конвертировать ID закрепленного сообщения:")
-		return 0
+		var lastLine string
+
+		for scanner.Scan() {
+			lastLine = scanner.Text()
+		}
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err, "Не получилось прочитать файл лога закреплённого сообщения:")
+			return 0
+		}
+
+		// Parse last line throw regexp
+		re := regexp.MustCompile(`ID: (\d+)`)
+		matches := re.FindStringSubmatch(lastLine)
+		if len(matches) != 2 {
+			log.Fatal(fmt.Errorf("длина закреплённого ID закрепленного сообщения меньше 2 элементов: %s", lastLine), "Не удалось распарсить ID закрепленного сообщения:")
+		}
+		id, err = strconv.Atoi(matches[1])
+		if err != nil {
+			log.Fatal(err, "Не удалось конвертировать ID закрепленного сообщения:")
+			return 0
+		}
 	}
 
 	return id
+}
+
+func getFileSize(filename string, log *lg.Logger) int64 {
+	file, err := os.Stat(filename)
+	if err != nil {
+		log.Fatal(err, "Не получилось открыть файл лога закреплённого сообщения:")
+		return 0
+	}
+
+	log.Info(fmt.Sprintf("Размер файла '%s' = %v байт", filename, file.Size()))
+
+	return file.Size()
 }
